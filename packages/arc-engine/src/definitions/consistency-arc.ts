@@ -12,8 +12,8 @@ export const consistencyArc: ArcDefinition = {
     accentColor: "#3B82F6",
     surfaceClass: "bg-slate-900/70",
     overlayGradient: "from-slate-900/80 via-slate-900/40 to-transparent",
-    backgroundImage: "/assets/arcs/consistency/bg-main.svg",
-    emblemImage: "/assets/arcs/consistency/emblem.svg",
+    backgroundImage: "/assets/arcs/consistency/bg-main.webp",
+    emblemImage: "/assets/arcs/consistency/emblem.webp",
     cardVariant: "glass",
   },
   schema: {
