@@ -14,6 +14,7 @@ import { historyRoutes } from "./routes/history.js";
 import { scoreboardRoutes } from "./routes/scoreboard.js";
 import { nudgeRoutes } from "./routes/nudge.js";
 import { themesRoutes } from "./routes/themes.js";
+import { telegramWebhookRoutes } from "./routes/telegram-webhook.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -36,6 +37,7 @@ export async function buildServer() {
   await app.register(scoreboardRoutes, { prefix: "/api" });
   await app.register(nudgeRoutes, { prefix: "/api" });
   await app.register(themesRoutes, { prefix: "/api" });
+  await app.register(telegramWebhookRoutes, { prefix: "/api/telegram" });
 
   // Serve frontend static build in production
   const webDist = path.resolve(__dirname, "../../web/dist");

@@ -1,8 +1,11 @@
 import type { FastifyPluginAsync } from "fastify";
 import { eq, and } from "drizzle-orm";
+import { nanoid } from "nanoid";
 import { db } from "../db/client.js";
-import { users, userArcStates, arcs } from "../db/schema.js";
+import { users, userArcStates, arcs, telegramLinkTokens } from "../db/schema.js";
 import type { MeResponse } from "@arc/shared";
+
+const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME ?? "";
 
 export const meRoutes: FastifyPluginAsync = async (app) => {
   app.get("/me", async (req) => {
@@ -58,24 +61,29 @@ export const meRoutes: FastifyPluginAsync = async (app) => {
     return resp;
   });
 
-  app.put<{ Body: { telegramChatId: string } }>(
-    "/me/telegram",
-    async (req) => {
-      const chatId = String(req.body.telegramChatId).trim();
-      if (!chatId || !/^\d+$/.test(chatId)) {
-        throw app.httpErrors.badRequest(
-          "Invalid chat ID — must be a numeric Telegram chat ID",
-        );
-      }
+  app.post("/me/telegram/link", async (req) => {
+    if (!BOT_USERNAME) {
+      throw app.httpErrors.serviceUnavailable(
+        "Telegram bot not configured (TELEGRAM_BOT_USERNAME missing)",
+      );
+    }
 
-      await db()
-        .update(users)
-        .set({ telegramChatId: chatId })
-        .where(eq(users.id, req.userId));
+    // Delete any existing tokens for this user
+    await db()
+      .delete(telegramLinkTokens)
+      .where(eq(telegramLinkTokens.userId, req.userId));
 
-      return { ok: true, telegramChatId: chatId };
-    },
-  );
+    const token = nanoid(12);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+    await db().insert(telegramLinkTokens).values({
+      token,
+      userId: req.userId,
+      expiresAt,
+    });
+
+    return { url: `https://t.me/${BOT_USERNAME}?start=${token}` };
+  });
 
   app.delete("/me/telegram", async (req) => {
     await db()

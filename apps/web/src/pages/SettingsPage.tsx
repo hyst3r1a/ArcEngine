@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Loader2, LogOut, MessageCircle, Check, X, ExternalLink } from "lucide-react";
 import type { MeResponse } from "@arc/shared";
 import { Card, ChapterTitle } from "@arc/ui";
@@ -9,40 +9,63 @@ export function SettingsPage() {
   const { user, logout } = useAuth();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const [chatId, setChatId] = useState("");
+  const [linking, setLinking] = useState(false);
+  const [polling, setPolling] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
     api
       .me()
-      .then((data) => {
-        setMe(data);
-      })
+      .then(setMe)
       .catch((err) => console.error("Failed to load profile:", err))
       .finally(() => setLoading(false));
+    return () => clearInterval(pollRef.current);
   }, []);
 
-  async function handleSave() {
-    const trimmed = chatId.trim();
-    if (!trimmed) return;
-    setSaving(true);
+  const stopPolling = useCallback(() => {
+    clearInterval(pollRef.current);
+    pollRef.current = undefined;
+    setPolling(false);
+  }, []);
+
+  async function handleConnect() {
+    setLinking(true);
     setStatus(null);
     try {
-      await api.setTelegramChatId(trimmed);
-      setMe((prev) => (prev ? { ...prev, telegramConnected: true } : prev));
-      setChatId("");
-      setStatus({ type: "ok", msg: "Telegram connected!" });
+      const { url } = await api.telegramLink();
+      window.open(url, "_blank");
+      setPolling(true);
+      let elapsed = 0;
+      pollRef.current = setInterval(async () => {
+        elapsed += 2000;
+        if (elapsed > 60_000) {
+          stopPolling();
+          setStatus({ type: "err", msg: "Timed out — try again" });
+          return;
+        }
+        try {
+          const data = await api.me();
+          if (data.telegramConnected) {
+            setMe(data);
+            stopPolling();
+            setStatus({ type: "ok", msg: "Telegram connected!" });
+          }
+        } catch {
+          // keep polling
+        }
+      }, 2000);
     } catch {
-      setStatus({ type: "err", msg: "Failed to save — make sure it's a valid numeric chat ID" });
+      setStatus({ type: "err", msg: "Failed to generate link" });
     } finally {
-      setSaving(false);
+      setLinking(false);
     }
   }
 
   async function handleDisconnect() {
     setSaving(true);
+    setStatus(null);
     try {
       await api.removeTelegram();
       setMe((prev) => (prev ? { ...prev, telegramConnected: false } : prev));
@@ -78,30 +101,9 @@ export function SettingsPage() {
             )}
           </div>
 
-          <div className="space-y-2 text-xs text-arc-muted">
-            <p>Get nudge notifications on Telegram when your partner pokes you.</p>
-            <div className="rounded-lg bg-slate-800/60 p-3 space-y-1.5">
-              <p className="font-medium text-arc-text text-sm">Setup steps:</p>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>
-                  Message{" "}
-                  <a
-                    href="https://t.me/userinfobot"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-arc-accent underline inline-flex items-center gap-0.5"
-                  >
-                    @userinfobot <ExternalLink size={10} />
-                  </a>{" "}
-                  on Telegram — it replies with your <strong>chat ID</strong> (a number)
-                </li>
-                <li>Paste that number below</li>
-                <li>
-                  Start a chat with the Arc bot so it can message you
-                </li>
-              </ol>
-            </div>
-          </div>
+          <p className="text-xs text-arc-muted">
+            Get nudge notifications on Telegram when your partner pokes you.
+          </p>
 
           {me?.telegramConnected ? (
             <div className="flex items-center gap-2">
@@ -115,24 +117,32 @@ export function SettingsPage() {
                 Disconnect
               </button>
             </div>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={chatId}
-                onChange={(e) => setChatId(e.target.value)}
-                placeholder="Your Telegram chat ID"
-                className="flex-1 rounded-lg border border-slate-600 bg-slate-800/60 px-3 py-2 text-sm text-arc-text placeholder:text-arc-muted focus:border-arc-accent focus:outline-none"
-              />
+          ) : polling ? (
+            <div className="flex items-center gap-3 rounded-lg bg-slate-800/60 p-3">
+              <Loader2 size={18} className="animate-spin text-arc-accent" />
+              <div className="text-sm text-arc-muted">
+                Waiting for you to tap <strong>Start</strong> in Telegram...
+              </div>
               <button
-                onClick={handleSave}
-                disabled={saving || !chatId.trim()}
-                className="rounded-lg bg-arc-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                onClick={stopPolling}
+                className="ml-auto text-xs text-arc-muted hover:text-arc-text"
               >
-                {saving ? <Loader2 size={16} className="animate-spin" /> : "Save"}
+                Cancel
               </button>
             </div>
+          ) : (
+            <button
+              onClick={handleConnect}
+              disabled={linking}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#2AABEE] py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {linking ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <ExternalLink size={16} />
+              )}
+              Connect Telegram
+            </button>
           )}
 
           {status && (

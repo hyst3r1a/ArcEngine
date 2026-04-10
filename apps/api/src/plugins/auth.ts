@@ -15,6 +15,7 @@ export const authPlugin = fp(async (app: FastifyInstance) => {
 
   app.addHook("onRequest", async (req: FastifyRequest) => {
     if (req.url.startsWith("/api/auth/")) return;
+    if (req.url.startsWith("/api/telegram/")) return;
     if (!req.url.startsWith("/api/")) return;
 
     const token = req.headers.authorization?.replace("Bearer ", "");

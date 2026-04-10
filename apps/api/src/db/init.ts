@@ -73,6 +73,12 @@ export async function initDb() {
     created_at TEXT NOT NULL
   )`);
 
+  await db.run(sql`CREATE TABLE IF NOT EXISTS telegram_link_tokens (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id),
+    expires_at TEXT NOT NULL
+  )`);
+
   // Migrations — idempotent column additions
   try {
     await db.run(sql`ALTER TABLE users ADD COLUMN telegram_chat_id TEXT`);

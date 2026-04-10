@@ -81,10 +81,10 @@ export const api = {
 
   themes: () => request<Record<string, ArcTheme>>("/api/themes"),
 
-  setTelegramChatId: (telegramChatId: string) =>
-    request<{ ok: boolean }>("/api/me/telegram", {
-      method: "PUT",
-      body: JSON.stringify({ telegramChatId }),
+  telegramLink: () =>
+    request<{ url: string }>("/api/me/telegram/link", {
+      method: "POST",
+      body: "{}",
     }),
 
   removeTelegram: () =>
