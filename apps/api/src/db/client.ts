@@ -9,12 +9,15 @@ let _db: Db;
 
 async function create(): Promise<Db> {
   if (isSqliteCloud) {
-    const mod = await import("@sqlitecloud/drivers");
-    const Database = (mod as any).default?.default
-      ?? (mod as any).default
-      ?? (mod as any).Database;
+    const mod: any = await import("@sqlitecloud/drivers");
+    const Database = [
+      mod.default?.Database,
+      mod.Database,
+      mod.default?.default,
+      mod.default,
+    ].find((x) => typeof x === "function");
 
-    if (typeof Database !== "function") {
+    if (!Database) {
       console.error("@sqlitecloud/drivers exports:", Object.keys(mod));
       throw new Error("Failed to resolve Database constructor from @sqlitecloud/drivers");
     }
