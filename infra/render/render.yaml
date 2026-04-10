@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: arc-tracker
+    runtime: node
+    plan: starter
+    buildCommand: |
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm -r build
+    startCommand: node apps/api/dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: file:/var/data/app.db
+      - key: PORT
+        value: "10000"
+    disk:
+      name: arc-data
+      mountPath: /var/data
+      sizeGB: 1
