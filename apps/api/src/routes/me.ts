@@ -53,7 +53,36 @@ export const meRoutes: FastifyPluginAsync = async (app) => {
         avatarSeed: user.avatarSeed,
       },
       activeArc: activeState,
+      telegramConnected: !!user.telegramChatId,
     };
     return resp;
+  });
+
+  app.put<{ Body: { telegramChatId: string } }>(
+    "/me/telegram",
+    async (req) => {
+      const chatId = String(req.body.telegramChatId).trim();
+      if (!chatId || !/^\d+$/.test(chatId)) {
+        throw app.httpErrors.badRequest(
+          "Invalid chat ID — must be a numeric Telegram chat ID",
+        );
+      }
+
+      await db()
+        .update(users)
+        .set({ telegramChatId: chatId })
+        .where(eq(users.id, req.userId));
+
+      return { ok: true, telegramChatId: chatId };
+    },
+  );
+
+  app.delete("/me/telegram", async (req) => {
+    await db()
+      .update(users)
+      .set({ telegramChatId: null })
+      .where(eq(users.id, req.userId));
+
+    return { ok: true };
   });
 };

@@ -5,6 +5,7 @@ export const users = sqliteTable("users", {
   displayName: text("display_name").notNull(),
   avatarSeed: text("avatar_seed").notNull(),
   inviteCode: text("invite_code").notNull().unique(),
+  telegramChatId: text("telegram_chat_id"),
   createdAt: text("created_at").notNull(),
 });
 

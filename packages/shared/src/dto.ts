@@ -86,4 +86,5 @@ export type LoginResponse = {
 export type MeResponse = {
   user: UserSummary;
   activeArc: ArcStateSummary | null;
+  telegramConnected: boolean;
 };

@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { eventLog, arcs, users } from "../db/schema.js";
 import { findPartnerIdAndPairId } from "../helpers/pair-lookup.js";
-import { sendTelegramMessage, getChatId } from "../helpers/telegram.js";
+import { sendTelegramMessage, getChatIdForUser } from "../helpers/telegram.js";
 
 export const nudgeRoutes: FastifyPluginAsync = async (app) => {
   app.post("/nudge", async (req) => {
@@ -24,7 +24,7 @@ export const nudgeRoutes: FastifyPluginAsync = async (app) => {
       .limit(1);
 
     const [partner] = await db()
-      .select({ inviteCode: users.inviteCode, displayName: users.displayName })
+      .select({ displayName: users.displayName })
       .from(users)
       .where(eq(users.id, pairResult.partnerId))
       .limit(1);
@@ -39,23 +39,22 @@ export const nudgeRoutes: FastifyPluginAsync = async (app) => {
     });
 
     let telegramSent = false;
-    if (partner) {
-      const chatId = getChatId(partner.inviteCode);
-      if (chatId) {
-        const senderName = sender?.displayName ?? "Your partner";
-        const arcName = activeArc?.name ?? "the arc";
-        const msg =
-          `🔔 <b>${senderName}</b> just nudged you!\n` +
-          `Time to log your <b>${arcName}</b> entry.`;
-        telegramSent = await sendTelegramMessage(chatId, msg);
-      }
+    const partnerChatId = await getChatIdForUser(pairResult.partnerId);
+    if (partnerChatId) {
+      const senderName = sender?.displayName ?? "Your partner";
+      const arcName = activeArc?.name ?? "the arc";
+      const msg =
+        `🔔 <b>${senderName}</b> just nudged you!\n` +
+        `Time to log your <b>${arcName}</b> entry.`;
+      telegramSent = await sendTelegramMessage(partnerChatId, msg);
     }
 
+    const partnerName = partner?.displayName ?? "partner";
     return {
       ok: true,
       message: telegramSent
-        ? `Nudge sent to ${partner?.displayName ?? "partner"}!`
-        : "Nudge logged (set up Telegram for notifications)",
+        ? `Nudge sent to ${partnerName}!`
+        : `Nudge logged — ${partnerName} hasn't connected Telegram yet`,
     };
   });
 };

@@ -73,6 +73,13 @@ export async function initDb() {
     created_at TEXT NOT NULL
   )`);
 
+  // Migrations — idempotent column additions
+  try {
+    await db.run(sql`ALTER TABLE users ADD COLUMN telegram_chat_id TEXT`);
+  } catch {
+    // column already exists
+  }
+
   // Seed if empty
   const existingUsers = await db.select().from(schema.users).limit(1);
   if (existingUsers.length > 0) {

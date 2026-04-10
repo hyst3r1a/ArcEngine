@@ -1,23 +1,22 @@
+import { eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import { users } from "../db/schema.js";
+
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
-const CHAT_MAP: Record<string, string> = parseChatMap();
 
-function parseChatMap(): Record<string, string> {
-  const raw = process.env.TELEGRAM_CHAT_MAP ?? "";
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch {
-    console.warn("TELEGRAM_CHAT_MAP is not valid JSON, skipping");
-    return {};
-  }
+export function isBotConfigured(): boolean {
+  return !!BOT_TOKEN;
 }
 
-export function isTelegramConfigured(): boolean {
-  return !!BOT_TOKEN && Object.keys(CHAT_MAP).length > 0;
-}
-
-export function getChatId(inviteCode: string): string | undefined {
-  return CHAT_MAP[inviteCode];
+export async function getChatIdForUser(
+  userId: string,
+): Promise<string | null> {
+  const [user] = await db()
+    .select({ telegramChatId: users.telegramChatId })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return user?.telegramChatId ?? null;
 }
 
 export async function sendTelegramMessage(
