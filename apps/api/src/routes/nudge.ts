@@ -45,7 +45,7 @@ export const nudgeRoutes: FastifyPluginAsync = async (app) => {
       const arcName = activeArc?.name ?? "the arc";
       const msg =
         `🔔 <b>${senderName}</b> just nudged you!\n` +
-        `Time to log your <b>${arcName}</b> entry.`;
+        `Time to log your <b>${arcName}</b> entry. https://arc-tracker-sb5c.onrender.com/`;
       telegramSent = await sendTelegramMessage(partnerChatId, msg);
     }
 
