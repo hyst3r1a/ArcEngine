@@ -30,26 +30,15 @@ async function create(): Promise<Db> {
     const { drizzle } = await import("drizzle-orm/sqlite-proxy");
     const connection = new Database(url);
 
-    const runCb = (sql: string, ...args: unknown[]): Promise<void> =>
-      new Promise((resolve, reject) =>
-        connection.run(sql, ...args, (err: unknown) =>
-          err ? reject(err) : resolve(),
-        ),
-      );
-
-    const allCb = (sql: string, ...args: unknown[]): Promise<unknown[]> =>
-      new Promise((resolve, reject) =>
-        connection.all(sql, ...args, (err: unknown, rows: unknown) =>
-          err ? reject(err) : resolve(rows == null ? [] : Array.from(rows as any)),
-        ),
-      );
-
-    return drizzle(async (sql, params, method) => {
+    return drizzle(async (sqlQuery, params, method) => {
+      const result = await connection.sql(sqlQuery, ...(params as unknown[]));
       if (method === "run") {
-        await runCb(sql, ...(params as unknown[]));
         return { rows: [] };
       }
-      const rows = await allCb(sql, ...(params as unknown[]));
+      if (result == null) return { rows: [] };
+      const rows = Array.from(result as Iterable<Record<string, unknown>>).map(
+        (row) => Object.values(row),
+      );
       return { rows };
     }, { schema }) as unknown as Db;
   }

@@ -33,19 +33,22 @@ export function TodayPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.today().then((d) => {
-      setData(d);
-      if (d.today.saved) {
-        setPayload(d.today.payload);
-      } else {
-        const initial: Record<string, unknown> = {};
-        for (const f of d.arc.schema.dailyFields) {
-          initial[f.key] = defaultValue(f);
+    api
+      .today()
+      .then((d) => {
+        setData(d);
+        if (d.today.saved) {
+          setPayload(d.today.payload);
+        } else {
+          const initial: Record<string, unknown> = {};
+          for (const f of d.arc.schema.dailyFields) {
+            initial[f.key] = defaultValue(f);
+          }
+          setPayload(initial);
         }
-        setPayload(initial);
-      }
-      setLoading(false);
-    });
+      })
+      .catch((err) => console.error("Failed to load today data:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   const setField = useCallback((key: string, value: unknown) => {
