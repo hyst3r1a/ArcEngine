@@ -2,8 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { telegramLinkTokens, users } from "../db/schema.js";
-
-const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET ?? "";
+import { WEBHOOK_SECRET, BOT_TOKEN } from "../config/telegram.js";
 
 export const telegramWebhookRoutes: FastifyPluginAsync = async (app) => {
   app.post("/webhook", async (req, reply) => {
@@ -55,8 +54,6 @@ export const telegramWebhookRoutes: FastifyPluginAsync = async (app) => {
       .delete(telegramLinkTokens)
       .where(eq(telegramLinkTokens.token, token));
 
-    // Send a confirmation message back to the user
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
     if (BOT_TOKEN) {
       try {
         await fetch(

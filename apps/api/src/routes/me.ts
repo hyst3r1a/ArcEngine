@@ -4,8 +4,7 @@ import { nanoid } from "nanoid";
 import { db } from "../db/client.js";
 import { users, userArcStates, arcs, telegramLinkTokens } from "../db/schema.js";
 import type { MeResponse } from "@arc/shared";
-
-const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME ?? "";
+import { BOT_USERNAME } from "../config/telegram.js";
 
 export const meRoutes: FastifyPluginAsync = async (app) => {
   app.get("/me", async (req) => {

@@ -5,22 +5,21 @@ import { buildServer } from "./server.js";
 const port = Number(process.env.PORT) || 3000;
 const host = process.env.HOST ?? "0.0.0.0";
 
+import { BOT_TOKEN, BOT_USERNAME, WEBHOOK_SECRET } from "./config/telegram.js";
+
 async function registerTelegramWebhook(appUrl: string) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const botUsername = process.env.TELEGRAM_BOT_USERNAME;
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET ?? "";
-  if (!token || !botUsername) return;
+  if (!BOT_TOKEN || !BOT_USERNAME) return;
 
   const webhookUrl = `${appUrl}/api/telegram/webhook`;
   try {
     const res = await fetch(
-      `https://api.telegram.org/bot${token}/setWebhook`,
+      `https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: webhookUrl,
-          secret_token: secret || undefined,
+          secret_token: WEBHOOK_SECRET || undefined,
           allowed_updates: ["message"],
         }),
       },
