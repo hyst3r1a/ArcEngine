@@ -74,7 +74,10 @@ export const api = {
     request<ArcDetailResponse>(`/api/arcs/${arcId}`),
 
   nudge: () =>
-    request<{ ok: boolean }>("/api/nudge", { method: "POST" }),
+    request<{ ok: boolean; message?: string }>("/api/nudge", {
+      method: "POST",
+      body: "{}",
+    }),
 
   themes: () => request<Record<string, ArcTheme>>("/api/themes"),
 };

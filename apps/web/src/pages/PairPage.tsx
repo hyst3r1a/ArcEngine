@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Loader2, Bell } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Loader2, Bell, Check } from "lucide-react";
 import type { PairResponse, TodayResponse } from "@arc/shared";
 import { PageFrame, Card, ChapterTitle } from "@arc/ui";
 import { api } from "../lib/api.js";
@@ -9,19 +9,33 @@ export function PairPage() {
   const [todayData, setTodayData] = useState<TodayResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [nudging, setNudging] = useState(false);
+  const [nudgeMsg, setNudgeMsg] = useState("");
+  const cooldownRef = useRef(false);
 
   useEffect(() => {
-    Promise.all([api.pair(), api.today()]).then(([p, t]) => {
-      setPair(p);
-      setTodayData(t);
-      setLoading(false);
-    });
+    Promise.all([api.pair(), api.today()])
+      .then(([p, t]) => {
+        setPair(p);
+        setTodayData(t);
+      })
+      .catch((err) => console.error("Failed to load pair data:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleNudge() {
+    if (cooldownRef.current) return;
     setNudging(true);
+    setNudgeMsg("");
     try {
-      await api.nudge();
+      const res = await api.nudge();
+      setNudgeMsg(res.message ?? "Nudge sent!");
+      cooldownRef.current = true;
+      setTimeout(() => {
+        cooldownRef.current = false;
+        setNudgeMsg("");
+      }, 30_000);
+    } catch {
+      setNudgeMsg("Failed to nudge");
     } finally {
       setNudging(false);
     }
@@ -122,11 +136,24 @@ export function PairPage() {
 
         <button
           onClick={handleNudge}
-          disabled={nudging}
+          disabled={nudging || !!nudgeMsg}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-arc-text transition-colors hover:bg-white/10 disabled:opacity-50"
         >
-          <Bell size={16} />
-          {nudging ? "Nudging..." : "Nudge Partner"}
+          {nudgeMsg ? (
+            <>
+              <Check size={16} className="text-green-400" />
+              <span className="text-green-400">{nudgeMsg}</span>
+            </>
+          ) : (
+            <>
+              {nudging ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Bell size={16} />
+              )}
+              {nudging ? "Sending..." : "Nudge Partner"}
+            </>
+          )}
         </button>
       </div>
     </PageFrame>
