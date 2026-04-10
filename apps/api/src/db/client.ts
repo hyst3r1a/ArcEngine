@@ -9,7 +9,16 @@ let _db: Db;
 
 async function create(): Promise<Db> {
   if (isSqliteCloud) {
-    const { default: Database } = await import("@sqlitecloud/drivers");
+    const mod = await import("@sqlitecloud/drivers");
+    const Database = (mod as any).default?.default
+      ?? (mod as any).default
+      ?? (mod as any).Database;
+
+    if (typeof Database !== "function") {
+      console.error("@sqlitecloud/drivers exports:", Object.keys(mod));
+      throw new Error("Failed to resolve Database constructor from @sqlitecloud/drivers");
+    }
+
     const { drizzle } = await import("drizzle-orm/sqlite-proxy");
     const connection = new Database(url);
 
