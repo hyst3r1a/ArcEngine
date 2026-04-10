@@ -18,13 +18,7 @@
     "test": "echo ok"
   },
   "dependencies": {
-    "@arc/shared": "workspace:*"
-  },
-  "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "devDependencies": {
+    "@arc/shared": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "react": "^19.0.0",
