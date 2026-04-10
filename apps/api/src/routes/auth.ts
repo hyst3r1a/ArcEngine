@@ -9,7 +9,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   app.post<{ Body: { inviteCode: string } }>("/login", async (req) => {
     const body = loginRequestSchema.parse(req.body);
 
-    const [user] = await db
+    const [user] = await db()
       .select()
       .from(users)
       .where(eq(users.inviteCode, body.inviteCode))

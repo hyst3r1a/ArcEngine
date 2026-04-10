@@ -10,7 +10,7 @@ export const pairRoutes: FastifyPluginAsync = async (app) => {
     const result = await findPartnerIdAndPairId(req.userId);
     if (!result) throw app.httpErrors.notFound("No pair found");
 
-    const [activeArc] = await db
+    const [activeArc] = await db()
       .select()
       .from(arcs)
       .where(eq(arcs.isActive, true))
@@ -19,8 +19,8 @@ export const pairRoutes: FastifyPluginAsync = async (app) => {
     if (!activeArc) throw app.httpErrors.notFound("No active arc");
 
     async function buildRow(uid: string): Promise<ScoreboardRow> {
-      const [user] = await db.select().from(users).where(eq(users.id, uid)).limit(1);
-      const [state] = await db
+      const [user] = await db().select().from(users).where(eq(users.id, uid)).limit(1);
+      const [state] = await db()
         .select()
         .from(userArcStates)
         .where(and(eq(userArcStates.userId, uid), eq(userArcStates.arcId, activeArc!.id)))
@@ -30,7 +30,7 @@ export const pairRoutes: FastifyPluginAsync = async (app) => {
       weekAgo.setDate(weekAgo.getDate() - 7);
       const weekStr = weekAgo.toISOString().slice(0, 10);
 
-      const weekEntries = await db
+      const weekEntries = await db()
         .select({ score: dailyEntries.score })
         .from(dailyEntries)
         .where(

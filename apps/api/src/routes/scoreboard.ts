@@ -7,7 +7,7 @@ import type { ScoreboardResponse, ScoreboardRow } from "@arc/shared";
 
 export const scoreboardRoutes: FastifyPluginAsync = async (app) => {
   app.get("/scoreboard", async (req) => {
-    const [activeArc] = await db
+    const [activeArc] = await db()
       .select()
       .from(arcs)
       .where(eq(arcs.isActive, true))
@@ -21,8 +21,8 @@ export const scoreboardRoutes: FastifyPluginAsync = async (app) => {
 
     const rows: ScoreboardRow[] = [];
     for (const uid of userIds) {
-      const [user] = await db.select().from(users).where(eq(users.id, uid)).limit(1);
-      const [state] = await db
+      const [user] = await db().select().from(users).where(eq(users.id, uid)).limit(1);
+      const [state] = await db()
         .select()
         .from(userArcStates)
         .where(
@@ -30,7 +30,7 @@ export const scoreboardRoutes: FastifyPluginAsync = async (app) => {
         )
         .limit(1);
 
-      const entries = await db
+      const entries = await db()
         .select({ score: dailyEntries.score })
         .from(dailyEntries)
         .where(

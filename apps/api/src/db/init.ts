@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { consistencyArc } from "@arc/arc-engine";
-import { db } from "./client.js";
+import { getDb } from "./client.js";
 import * as schema from "./schema.js";
 
 /**
@@ -9,6 +9,7 @@ import * as schema from "./schema.js";
  * Safe to call on every startup — all operations are idempotent.
  */
 export async function initDb() {
+  const db = await getDb();
   // Create tables via raw SQL (drizzle-kit push isn't available at runtime)
   await db.run(sql`CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,

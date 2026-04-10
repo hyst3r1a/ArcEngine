@@ -10,13 +10,13 @@ export const nudgeRoutes: FastifyPluginAsync = async (app) => {
     const pairResult = await findPartnerIdAndPairId(req.userId);
     if (!pairResult) throw app.httpErrors.badRequest("No pair found");
 
-    const [activeArc] = await db
+    const [activeArc] = await db()
       .select()
       .from(arcs)
       .where(eq(arcs.isActive, true))
       .limit(1);
 
-    await db.insert(eventLog).values({
+    await db().insert(eventLog).values({
       id: nanoid(),
       userId: req.userId,
       arcId: activeArc?.id ?? null,

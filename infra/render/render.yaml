@@ -2,7 +2,7 @@ services:
   - type: web
     name: arc-tracker
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: |
       corepack enable &&
       pnpm install --frozen-lockfile &&
@@ -12,10 +12,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: file:/var/data/app.db
+        sync: false
       - key: PORT
         value: "10000"
-    disk:
-      name: arc-data
-      mountPath: /var/data
-      sizeGB: 1

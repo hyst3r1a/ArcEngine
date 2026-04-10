@@ -11,8 +11,8 @@ export const historyRoutes: FastifyPluginAsync = async (app) => {
       const days = Math.min(Number(req.query.days) || 30, 365);
 
       const [activeArc] = req.query.arcId
-        ? await db.select().from(arcs).where(eq(arcs.id, req.query.arcId)).limit(1)
-        : await db.select().from(arcs).where(eq(arcs.isActive, true)).limit(1);
+        ? await db().select().from(arcs).where(eq(arcs.id, req.query.arcId)).limit(1)
+        : await db().select().from(arcs).where(eq(arcs.isActive, true)).limit(1);
 
       if (!activeArc) throw app.httpErrors.notFound("No arc found");
 
@@ -20,7 +20,7 @@ export const historyRoutes: FastifyPluginAsync = async (app) => {
       cutoff.setDate(cutoff.getDate() - days);
       const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-      const rows = await db
+      const rows = await db()
         .select()
         .from(dailyEntries)
         .where(

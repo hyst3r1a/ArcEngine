@@ -27,7 +27,7 @@ function parseArcDef(row: typeof arcs.$inferSelect) {
 }
 
 async function getArcState(userId: string, arcId: string) {
-  const [state] = await db
+  const [state] = await db()
     .select()
     .from(userArcStates)
     .where(and(eq(userArcStates.userId, userId), eq(userArcStates.arcId, arcId)))
@@ -40,7 +40,7 @@ async function getTodayEntry(
   arcId: string,
   date: string,
 ): Promise<TodayEntry> {
-  const [entry] = await db
+  const [entry] = await db()
     .select()
     .from(dailyEntries)
     .where(
@@ -65,10 +65,10 @@ async function getTodayEntry(
 
 export const todayRoutes: FastifyPluginAsync = async (app) => {
   app.get("/today", async (req) => {
-    const [user] = await db.select().from(users).where(eq(users.id, req.userId)).limit(1);
+    const [user] = await db().select().from(users).where(eq(users.id, req.userId)).limit(1);
     if (!user) throw app.httpErrors.notFound();
 
-    const [activeArc] = await db.select().from(arcs).where(eq(arcs.isActive, true)).limit(1);
+    const [activeArc] = await db().select().from(arcs).where(eq(arcs.isActive, true)).limit(1);
     if (!activeArc) throw app.httpErrors.notFound("No active arc");
 
     const arcDef = parseArcDef(activeArc);
@@ -79,7 +79,7 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
     let partner: TodayResponse["partner"] = null;
     const pairResult = await findPartnerIdAndPairId(req.userId);
     if (pairResult) {
-      const [partnerUser] = await db
+      const [partnerUser] = await db()
         .select()
         .from(users)
         .where(eq(users.id, pairResult.partnerId))
@@ -136,7 +136,7 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
       const body = todayPutSchema.parse(req.body);
       const { arcId, payload } = body;
 
-      const [arcRow] = await db.select().from(arcs).where(eq(arcs.id, arcId)).limit(1);
+      const [arcRow] = await db().select().from(arcs).where(eq(arcs.id, arcId)).limit(1);
       if (!arcRow) throw app.httpErrors.notFound("Arc not found");
 
       const arcDef = parseArcDef(arcRow);
@@ -152,7 +152,7 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
       const now = new Date().toISOString();
 
       // Upsert daily entry
-      const [existing] = await db
+      const [existing] = await db()
         .select()
         .from(dailyEntries)
         .where(
@@ -165,7 +165,7 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
         .limit(1);
 
       if (existing) {
-        await db
+        await db()
           .update(dailyEntries)
           .set({
             payloadJson: JSON.stringify(validated),
@@ -174,7 +174,7 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
           })
           .where(eq(dailyEntries.id, existing.id));
       } else {
-        await db.insert(dailyEntries).values({
+        await db().insert(dailyEntries).values({
           id: nanoid(),
           userId: req.userId,
           arcId,
@@ -187,7 +187,7 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
       }
 
       // Recompute streak
-      const allEntries = await db
+      const allEntries = await db()
         .select({ date: dailyEntries.date, score: dailyEntries.score })
         .from(dailyEntries)
         .where(
@@ -198,7 +198,7 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
       const { current, best } = computeStreak(allEntries, date);
 
       // Get existing state for cumulative total
-      const [prevState] = await db
+      const [prevState] = await db()
         .select()
         .from(userArcStates)
         .where(
@@ -212,12 +212,12 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
       const totalScore = allEntries.reduce((sum, e) => sum + e.score, 0);
 
       if (prevState) {
-        await db
+        await db()
           .update(userArcStates)
           .set({ currentStreak: current, bestStreak: best, totalScore })
           .where(eq(userArcStates.id, prevState.id));
       } else {
-        await db.insert(userArcStates).values({
+        await db().insert(userArcStates).values({
           id: nanoid(),
           userId: req.userId,
           arcId,
@@ -229,7 +229,7 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
       }
 
       // Return fresh today response
-      const [user] = await db
+      const [user] = await db()
         .select()
         .from(users)
         .where(eq(users.id, req.userId))
@@ -245,7 +245,7 @@ export const todayRoutes: FastifyPluginAsync = async (app) => {
       let partner: TodayResponse["partner"] = null;
       const pairResult = await findPartnerIdAndPairId(req.userId);
       if (pairResult) {
-        const [partnerUser] = await db
+        const [partnerUser] = await db()
           .select()
           .from(users)
           .where(eq(users.id, pairResult.partnerId))

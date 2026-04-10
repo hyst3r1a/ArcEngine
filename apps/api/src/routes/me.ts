@@ -6,7 +6,7 @@ import type { MeResponse } from "@arc/shared";
 
 export const meRoutes: FastifyPluginAsync = async (app) => {
   app.get("/me", async (req) => {
-    const [user] = await db
+    const [user] = await db()
       .select()
       .from(users)
       .where(eq(users.id, req.userId))
@@ -14,7 +14,7 @@ export const meRoutes: FastifyPluginAsync = async (app) => {
 
     if (!user) throw app.httpErrors.notFound("User not found");
 
-    const [activeArc] = await db
+    const [activeArc] = await db()
       .select()
       .from(arcs)
       .where(eq(arcs.isActive, true))
@@ -22,7 +22,7 @@ export const meRoutes: FastifyPluginAsync = async (app) => {
 
     let activeState = null;
     if (activeArc) {
-      const [state] = await db
+      const [state] = await db()
         .select()
         .from(userArcStates)
         .where(

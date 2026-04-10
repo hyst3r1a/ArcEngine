@@ -5,7 +5,7 @@ import { pairs } from "../db/schema.js";
 export async function findPartnerIdAndPairId(
   userId: string,
 ): Promise<{ pairId: string; partnerId: string } | null> {
-  const [pair] = await db
+  const [pair] = await db()
     .select()
     .from(pairs)
     .where(or(eq(pairs.userAId, userId), eq(pairs.userBId, userId)))

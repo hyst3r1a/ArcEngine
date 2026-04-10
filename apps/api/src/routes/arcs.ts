@@ -20,7 +20,7 @@ function parseArcDefinition(row: typeof arcs.$inferSelect): ArcDefinition {
 
 export const arcsRoutes: FastifyPluginAsync = async (app) => {
   app.get("/arcs", async () => {
-    const rows = await db.select().from(arcs);
+    const rows = await db().select().from(arcs);
     const items: ArcListItem[] = rows.map((r) => ({
       id: r.id,
       name: r.name,
@@ -34,10 +34,10 @@ export const arcsRoutes: FastifyPluginAsync = async (app) => {
 
   app.get<{ Params: { arcId: string } }>("/arcs/:arcId", async (req) => {
     const { arcId } = req.params;
-    const [row] = await db.select().from(arcs).where(eq(arcs.id, arcId)).limit(1);
+    const [row] = await db().select().from(arcs).where(eq(arcs.id, arcId)).limit(1);
     if (!row) throw app.httpErrors.notFound("Arc not found");
 
-    const [state] = await db
+    const [state] = await db()
       .select()
       .from(userArcStates)
       .where(

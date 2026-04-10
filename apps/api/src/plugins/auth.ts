@@ -23,7 +23,7 @@ export const authPlugin = fp(async (app: FastifyInstance) => {
     }
 
     // MVP: token is the user's invite code
-    const [user] = await db
+    const [user] = await db()
       .select({ id: users.id })
       .from(users)
       .where(eq(users.inviteCode, token))
