@@ -10,10 +10,19 @@ let _db: Db;
 async function create(): Promise<Db> {
   if (isSqliteCloud) {
     const { default: Database } = await import("@sqlitecloud/drivers");
-    const { drizzle } = await import("drizzle-orm/better-sqlite3");
+    const { drizzle } = await import("drizzle-orm/sqlite-proxy");
     const connection = new Database(url);
-    return drizzle(connection as any, { schema }) as unknown as Db;
+
+    return drizzle(async (sql, params, method) => {
+      if (method === "run") {
+        await connection.run(sql, ...(params as unknown[]));
+        return { rows: [] as unknown[][] };
+      }
+      const rows = await connection.all(sql, ...(params as unknown[]));
+      return { rows: (rows ?? []) as unknown[][] };
+    }, { schema }) as unknown as Db;
   }
+
   const { createClient } = await import("@libsql/client");
   const { drizzle } = await import("drizzle-orm/libsql");
   return drizzle(createClient({ url }), { schema });
@@ -24,7 +33,6 @@ export async function getDb(): Promise<Db> {
   return _db;
 }
 
-// Synchronous accessor for after initialization
 export function db(): Db {
   if (!_db) throw new Error("Database not initialized — call getDb() first");
   return _db;
