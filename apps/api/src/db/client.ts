@@ -26,12 +26,14 @@ async function create(): Promise<Db> {
     const connection = new Database(url);
 
     return drizzle(async (sql, params, method) => {
+      const p = params as unknown[];
       if (method === "run") {
-        await connection.run(sql, ...(params as unknown[]));
-        return { rows: [] as unknown[][] };
+        await connection.run(sql, ...p);
+        return { rows: [] };
       }
-      const rows = await connection.all(sql, ...(params as unknown[]));
-      return { rows: (rows ?? []) as unknown[][] };
+      const raw = await connection.all(sql, ...p);
+      const rows = raw == null ? [] : Array.from(raw);
+      return { rows };
     }, { schema }) as unknown as Db;
   }
 
